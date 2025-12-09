@@ -6,6 +6,7 @@ export function Settings() {
     const [interval, setInterval] = useState(30);
     const [fitMode, setFitMode] = useState<'cover' | 'contain'>('cover');
     const [sortOrder, setSortOrder] = useState('newest');
+    const [portraitPair, setPortraitPair] = useState(false);
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState('');
     const [error, setError] = useState('');
@@ -21,6 +22,7 @@ export function Settings() {
             if (user.slideshow_interval) setInterval(user.slideshow_interval);
             if (user.slideshow_fit) setFitMode(user.slideshow_fit);
             if (user.slideshow_order) setSortOrder(user.slideshow_order);
+            if (user.slideshow_portrait_pair) setPortraitPair(user.slideshow_portrait_pair);
         }
     }
 
@@ -50,6 +52,7 @@ export function Settings() {
                 slideshow_interval: interval,
                 slideshow_fit: fitMode,
                 slideshow_order: sortOrder,
+                slideshow_portrait_pair: portraitPair,
             });
 
             setSuccess('Settings saved successfully!');
@@ -153,6 +156,23 @@ export function Settings() {
                         <p className="text-white/60 text-sm">
                             Controls the order in which photos are displayed.
                         </p>
+                    </div>
+
+                    {/* Portrait Pair Setting */}
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
+                        <div>
+                            <div className="text-lg font-medium text-white mb-1">Smart Portrait Pairing</div>
+                            <div className="text-sm text-white/60">Assuming 2 portrait photos are available, show them side-by-side.</div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                className="sr-only peer"
+                                checked={portraitPair}
+                                onChange={(e) => setPortraitPair(e.target.checked)}
+                            />
+                            <div className="w-14 h-7 bg-white/20 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
+                        </label>
                     </div>
 
                     {/* Save Button */}

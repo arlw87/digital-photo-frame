@@ -24,6 +24,11 @@ export function Display() {
     const [intervalTime, setIntervalTime] = useState(30000);
     const [fitMode, setFitMode] = useState<'cover' | 'contain'>('cover');
     const [sortOrder, setSortOrder] = useState('newest');
+    const [portraitPair, setPortraitPair] = useState(false);
+    const [aspects, setAspects] = useState<Record<string, number>>({});
+
+    // Computed slides based on images and settings
+    const [slides, setSlides] = useState<Array<{ type: 'single' | 'pair', items: ImageRecord[] }>>([]);
 
     useEffect(() => {
         checkAuthAndFetch();
@@ -56,6 +61,7 @@ export function Display() {
                 if (user.slideshow_interval) setIntervalTime(user.slideshow_interval * 1000);
                 if (user.slideshow_fit) setFitMode(user.slideshow_fit);
                 if (user.slideshow_order) setSortOrder(user.slideshow_order);
+                if (user.slideshow_portrait_pair) setPortraitPair(user.slideshow_portrait_pair);
             }
         });
 
@@ -112,14 +118,61 @@ export function Display() {
     }, [sortOrder]); // We don't include 'images' here to avoid infinite loops with random shuffle
 
     useEffect(() => {
-        if (images.length <= 1) return;
+        if (slides.length <= 1) return;
 
         const interval = setInterval(() => {
-            setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+            setCurrentIndex((prevIndex) => (prevIndex + 1) % slides.length);
         }, intervalTime);
 
         return () => clearInterval(interval);
-    }, [images, intervalTime]);
+    }, [slides.length, intervalTime]);
+
+    // Aspect Ratio Detection
+    useEffect(() => {
+        images.forEach(img => {
+            if (aspects[img.id]) return; // Already known
+
+            const i = new Image();
+            i.src = getImageUrl(img);
+            i.onload = () => {
+                setAspects(prev => ({ ...prev, [img.id]: i.width / i.height }));
+            };
+        });
+    }, [images]);
+
+    // Slide Generation Logic
+    useEffect(() => {
+        if (!portraitPair) {
+            setSlides(images.map(img => ({ type: 'single', items: [img] })));
+            return;
+        }
+
+        const newSlides: Array<{ type: 'single' | 'pair', items: ImageRecord[] }> = [];
+        let i = 0;
+        while (i < images.length) {
+            const current = images[i];
+            const aspect = aspects[current.id];
+
+            // Check if current is portrait (aspect < 1) or unknown (assume landscape safe for now, or wait? Let's treat unknown as single)
+            const isPortrait = aspect && aspect < 1;
+
+            if (isPortrait && i + 1 < images.length) {
+                const next = images[i + 1];
+                const nextAspect = aspects[next.id];
+                const isNextPortrait = nextAspect && nextAspect < 1;
+
+                if (isNextPortrait) {
+                    newSlides.push({ type: 'pair', items: [current, next] });
+                    i += 2;
+                    continue;
+                }
+            }
+
+            newSlides.push({ type: 'single', items: [current] });
+            i++;
+        }
+        setSlides(newSlides);
+    }, [images, portraitPair, aspects]);
 
     // Fisher-Yates Shuffle
     function shuffle(array: ImageRecord[]) {
@@ -210,6 +263,9 @@ export function Display() {
             if (user.slideshow_order) {
                 setSortOrder(user.slideshow_order);
             }
+            if (user.slideshow_portrait_pair) {
+                setPortraitPair(user.slideshow_portrait_pair);
+            }
         }
     }
 
@@ -278,18 +334,32 @@ export function Display() {
             onMouseEnter={() => setShowControls(true)}
             onMouseLeave={() => setShowControls(false)}
         >
-            {/* Images with Fade Transition */}
-            {images.map((img, index) => (
+            {/* Slides with Fade Transition */}
+            {slides.map((slide, index) => (
                 <div
-                    key={img.id}
-                    className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentIndex ? 'opacity-100' : 'opacity-0'
+                    key={index} // Use index as key because slides regroup dynamically
+                    className={`absolute inset-0 transition-opacity duration-1000 ease-in-out flex items-center justify-center bg-black ${index === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
                         }`}
                 >
-                    <img
-                        src={getImageUrl(img)}
-                        alt={img.name}
-                        className={`w-full h-full ${fitMode === 'contain' ? 'object-contain' : 'object-cover'}`}
-                    />
+                    {slide.type === 'pair' ? (
+                        <div className="w-full h-full flex flex-row">
+                            {slide.items.map((img) => (
+                                <div key={img.id} className="w-1/2 h-full relative">
+                                    <img
+                                        src={getImageUrl(img)}
+                                        alt={img.name}
+                                        className="w-full h-full object-contain"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <img
+                            src={getImageUrl(slide.items[0])}
+                            alt={slide.items[0].name}
+                            className={`w-full h-full ${fitMode === 'contain' ? 'object-contain' : 'object-cover'}`}
+                        />
+                    )}
                 </div>
             ))}
 
