@@ -148,28 +148,43 @@ export function Display() {
         }
 
         const newSlides: Array<{ type: 'single' | 'pair', items: ImageRecord[] }> = [];
-        let i = 0;
-        while (i < images.length) {
-            const current = images[i];
-            const aspect = aspects[current.id];
+        const consumedIds = new Set<string>();
 
-            // Check if current is portrait (aspect < 1) or unknown (assume landscape safe for now, or wait? Let's treat unknown as single)
+        for (let i = 0; i < images.length; i++) {
+            const current = images[i];
+
+            if (consumedIds.has(current.id)) continue;
+
+            const aspect = aspects[current.id];
             const isPortrait = aspect && aspect < 1;
 
-            if (isPortrait && i + 1 < images.length) {
-                const next = images[i + 1];
-                const nextAspect = aspects[next.id];
-                const isNextPortrait = nextAspect && nextAspect < 1;
+            if (isPortrait) {
+                // Search ahead for the next available portrait
+                let pairFound = false;
+                for (let j = i + 1; j < images.length; j++) {
+                    const candidate = images[j];
+                    if (consumedIds.has(candidate.id)) continue;
 
-                if (isNextPortrait) {
-                    newSlides.push({ type: 'pair', items: [current, next] });
-                    i += 2;
-                    continue;
+                    const candidateAspect = aspects[candidate.id];
+                    const isCandidatePortrait = candidateAspect && candidateAspect < 1;
+
+                    if (isCandidatePortrait) {
+                        newSlides.push({ type: 'pair', items: [current, candidate] });
+                        consumedIds.add(current.id);
+                        consumedIds.add(candidate.id);
+                        pairFound = true;
+                        break;
+                    }
                 }
-            }
 
-            newSlides.push({ type: 'single', items: [current] });
-            i++;
+                if (!pairFound) {
+                    newSlides.push({ type: 'single', items: [current] });
+                    consumedIds.add(current.id);
+                }
+            } else {
+                newSlides.push({ type: 'single', items: [current] });
+                consumedIds.add(current.id);
+            }
         }
         setSlides(newSlides);
     }, [images, portraitPair, aspects]);

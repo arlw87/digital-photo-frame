@@ -60,6 +60,8 @@ def req(url, method="GET", data=None, headers=None, files=None):
         with urllib.request.urlopen(req) as r:
             code = r.getcode()
             resp = r.read().decode('utf-8')
+            if code == 204 or not resp:
+                return code, {}
             return code, json.loads(resp)
     except urllib.error.HTTPError as e:
         return e.code, json.loads(e.read().decode('utf-8'))
@@ -115,24 +117,40 @@ def run():
         user_id = resp["id"]
 
     print(f"User ID: {user_id}")
+    
+    # 3.5 Cleanup existing images for user
+    print("Cleaning up old images...")
+    code, resp = req(f"{PB_URL}/api/collections/images/records?filter=owner='{user_id}'", "GET", headers=headers)
+    if code == 200:
+        for item in resp["items"]:
+            req(f"{PB_URL}/api/collections/images/records/{item['id']}", "DELETE", headers=headers)
 
     # 4. Create Images
-    p1 = create_image("portrait_1.png", "blue")
-    p2 = create_image("portrait_2.png", "green")
+    p1 = create_image("portrait_old.png", "blue", (500, 1000))
+    l1 = create_image("landscape_mid.png", "red", (1000, 500))
+    p2 = create_image("portrait_new.png", "green", (500, 1000))
 
-    # 5. Upload Images
-    for fname in [p1, p2]:
-        print(f"Uploading {fname}...")
-        files = {'file': fname}
-        data = {
-            'owner': user_id,
-            'name': fname
-        }
-        code, resp = req(f"{PB_URL}/api/collections/images/records", "POST", data=data, files=files, headers=headers)
-        if code != 200:
-            print(f"Upload failed for {fname}:", resp)
-        else:
-            print(f"Uploaded {fname}")
+    # 5. Upload Images in specific order (for 'newest' sort)
+    # We want final order: P2 (New), L1 (Mid), P1 (Old)
+    # So P2 should pair with P1, skipping L1.
+    
+    # Upload P1 first (Oldest)
+    print(f"Uploading {p1}...")
+    files = {'file': p1}
+    data = {'owner': user_id, 'name': p1}
+    req(f"{PB_URL}/api/collections/images/records", "POST", data=data, files=files, headers=headers)
+    
+    # Upload L1 (Mid)
+    print(f"Uploading {l1}...")
+    files = {'file': l1}
+    data = {'owner': user_id, 'name': l1}
+    req(f"{PB_URL}/api/collections/images/records", "POST", data=data, files=files, headers=headers)
+
+    # Upload P2 (Newest)
+    print(f"Uploading {p2}...")
+    files = {'file': p2}
+    data = {'owner': user_id, 'name': p2}
+    req(f"{PB_URL}/api/collections/images/records", "POST", data=data, files=files, headers=headers)
 
     print("Done")
 
