@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { pb } from '../lib/pocketbase';
-import { useTheme } from '../context/ThemeContext';
 
 interface ImageRecord {
     id: string;
@@ -21,7 +20,7 @@ export function Gallery() {
     const [selectedImage, setSelectedImage] = useState<ImageRecord | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-    const { theme, toggleTheme } = useTheme();
+    // const { theme, toggleTheme } = useTheme();
 
     useEffect(() => {
         fetchImages();

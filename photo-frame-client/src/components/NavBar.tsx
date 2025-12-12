@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { pb } from '../lib/pocketbase';
@@ -45,8 +44,8 @@ export function NavBar() {
                                     key={item.path}
                                     to={item.path}
                                     className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 ${active
-                                            ? 'bg-purple-500 text-white shadow-md scale-105'
-                                            : 'text-gray-700 dark:text-gray-200 hover:bg-white/10 hover:text-purple-400'
+                                        ? 'bg-purple-500 text-white shadow-md scale-105'
+                                        : 'text-gray-700 dark:text-gray-200 hover:bg-white/10 hover:text-purple-400'
                                         }`}
                                 >
                                     <Icon size={20} />
