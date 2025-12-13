@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  photo-frame:
+    container_name: digital_frame
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    volumes:
+      - ./pb_data:/pb/pb_data
+    environment:
+      # Optional: Set timezone for proper timestamp handling
+      - TZ="Europe/London"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8090/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - npm_default
+
+networks:
+  npm_default:
+    external: true
+    
+    

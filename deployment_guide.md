@@ -15,21 +15,48 @@ rsync -avz --exclude 'node_modules' --exclude 'pb_data' ./ root@YOUR_VPS_IP:/opt
 ```
 
 ## 2. Build and Run on VPS
-SSH into your VPS and run:
-```bash
-cd /opt/photo-frame
 
-# Build the image directly on the VPS
-docker build -t photo-frame .
+### Option A: Use Docker Compose (Recommended)
+This method is cleaner and manages configuration for you.
 
-# Run it
-docker run -d \
-  --name digital_frame \
-  --restart unless-stopped \
-  -p 8090:8090 \
-  -v ./pb_data:/pb/pb_data \
-  photo-frame
-```
+1.  Navigate to your project folder:
+    ```bash
+    cd /opt/photo-frame
+    ```
+
+2.  Start the application:
+    ```bash
+    # This builds the image and starts the container in the background
+    docker-compose up -d
+    ```
+
+3.  Useful commands:
+    ```bash
+    # View logs
+    docker-compose logs -f
+    
+    # Restart (rebuilds if you changed code)
+    docker-compose down
+    docker-compose up -d --build
+    ```
+
+### Option B: Manual Docker Command
+If you prefer running manual commands or don't have docker-compose.
+
+1.  Build the image:
+    ```bash
+    docker build -t photo-frame .
+    ```
+
+2.  Run the container:
+    ```bash
+    docker run -d \
+      --name digital_frame \
+      --restart unless-stopped \
+      -p 8090:8090 \
+      -v ./pb_data:/pb/pb_data \
+      photo-frame
+    ```
 
 ## 3. Verify
 Open `http://YOUR_VPS_IP:8090` in your browser. You should see the login screen.
@@ -68,3 +95,17 @@ This section assumes you already have Nginx Proxy Manager (NPM) installed and ru
 Click **Save**.
 *   It may take 10-20 seconds to generate the SSL certificate.
 *   Once done, try accessing `https://frame.example.com`.
+
+Current status:s
+files at /projects/photo-frame
+docker image built. Called photo-frame
+what port does this work on? what port is exposed and linked. 
+need to create a docker compose file
+need to set up nginx proxy manager
+remember your need the network stuff in the compose file
+
+----
+
+Copy the new copy access
+Do a docker-compose up -d
+docker-compose up -d build
